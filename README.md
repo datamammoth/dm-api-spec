@@ -1,6 +1,6 @@
 # DataMammoth API v2 — OpenAPI Specification
 
-The official OpenAPI 3.1 specification for the [DataMammoth REST API v2](https://data-mammoth.com/api-docs).
+The official OpenAPI 3.1 specification for the [DataMammoth REST API v2](https://data-mammoth.com/api-docs/reference).
 
 ## Quick Links
 
