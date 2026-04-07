@@ -1,0 +1,2410 @@
+{
+  "info": {
+    "name": "DataMammoth API v2",
+    "_postman_id": "dm-api-v2",
+    "description": "Complete API collection for DataMammoth v2. 105 endpoints across 10 modules.\n\nBase URL: {{base_url}}\nAuth: Bearer {{api_key}}\n\nAll responses follow the v2 envelope format with `meta.request_id` and `meta.version`.\nPaginated endpoints support `page`, `per_page`, `sort`, `search`, and `filter[field]` query params.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{api_key}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://app.datamammoth.com/api/v2" },
+    { "key": "api_key", "value": "dm_your_api_key_here" },
+    { "key": "server_id", "value": "" },
+    { "key": "product_id", "value": "" },
+    { "key": "invoice_id", "value": "" },
+    { "key": "subscription_id", "value": "" },
+    { "key": "ticket_id", "value": "" },
+    { "key": "order_id", "value": "" },
+    { "key": "task_id", "value": "" },
+    { "key": "webhook_id", "value": "" },
+    { "key": "api_key_id", "value": "" },
+    { "key": "session_id", "value": "" },
+    { "key": "user_id", "value": "" },
+    { "key": "role_id", "value": "" },
+    { "key": "tenant_id", "value": "" },
+    { "key": "zone_id", "value": "" },
+    { "key": "snap_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "description": "Service health and status endpoints. No authentication required.",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Returns the service health status including database and Redis connectivity. No authentication required."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});",
+                  "pm.test('Health data is present', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body.data).to.have.property('status');",
+                  "  pm.expect(body.data).to.have.property('checks');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Servers",
+      "description": "Manage VPS/cloud servers: provision, power actions, snapshots, metrics, firewall, and console access.",
+      "item": [
+        {
+          "name": "List Servers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["servers"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "sort", "value": "-created_at", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "filter[status]", "value": "active", "disabled": true },
+                { "key": "filter[provider]", "value": "", "disabled": true },
+                { "key": "filter[region]", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Returns a paginated list of servers owned by the authenticated user. Supports filtering by status, provider, and region, plus full-text search on hostname, label, and IP."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  var body = pm.response.json();",
+                  "  if (body.data && Array.isArray(body.data) && body.data.length > 0) {",
+                  "    pm.collectionVariables.set('server_id', body.data[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Server",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"{{product_id}}\",\n  \"zone_id\": \"{{zone_id}}\",\n  \"image_id\": \"ubuntu-22.04\",\n  \"hostname\": \"web-server-01\",\n  \"label\": \"Production Web Server\",\n  \"ssh_key_ids\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/servers",
+              "host": ["{{base_url}}"],
+              "path": ["servers"]
+            },
+            "description": "Provisions a new server asynchronously. Returns 202 Accepted with a task ID to track provisioning progress. Requires product_id and image_id; provide either zone_id or region."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 202 Accepted', function() {",
+                  "  pm.expect(pm.response.code).to.equal(202);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});",
+                  "if (pm.response.code === 202) {",
+                  "  var body = pm.response.json();",
+                  "  if (body.data && body.data.task_id) {",
+                  "    pm.collectionVariables.set('task_id', body.data.task_id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Get Server",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}"]
+            },
+            "description": "Returns detailed server information including live status from the provider, usage metrics, and HATEOAS links to related resources."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update Server",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hostname\": \"web-server-01-updated\",\n  \"label\": \"Production Web Server (Updated)\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}"]
+            },
+            "description": "Updates a server's hostname and/or label. At least one field must be provided."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Terminate Server",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}"]
+            },
+            "description": "Terminates a server asynchronously. Returns 202 Accepted with a task ID. The server will be marked as 'terminated' once the provider confirms deletion."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 202 Accepted', function() {",
+                  "  pm.expect(pm.response.code).to.equal(202);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Power On",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/actions/power-on",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "actions", "power-on"]
+            },
+            "description": "Sends a power-on command to the server. The server must not be terminated."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Power Off",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/actions/power-off",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "actions", "power-off"]
+            },
+            "description": "Sends a hard power-off command to the server. For a graceful shutdown, use the Shutdown action instead."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Reboot",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/actions/reboot",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "actions", "reboot"]
+            },
+            "description": "Reboots the server. This is equivalent to a power cycle."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Shutdown",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/actions/shutdown",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "actions", "shutdown"]
+            },
+            "description": "Sends a graceful shutdown (ACPI) command to the server's operating system."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "List Snapshots",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/snapshots",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "snapshots"]
+            },
+            "description": "Lists all snapshots for a server, fetched from the underlying provider."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  var body = pm.response.json();",
+                  "  if (body.data && Array.isArray(body.data) && body.data.length > 0) {",
+                  "    pm.collectionVariables.set('snap_id', body.data[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Snapshot",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"pre-deployment-backup\",\n  \"description\": \"Snapshot before v2.1 deployment\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/snapshots",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "snapshots"]
+            },
+            "description": "Creates a new snapshot of the server's current state. Requires a name (max 255 chars) and optional description."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201 Created', function() {",
+                  "  pm.expect(pm.response.code).to.equal(201);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  var body = pm.response.json();",
+                  "  if (body.data && body.data.id) {",
+                  "    pm.collectionVariables.set('snap_id', body.data.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Delete Snapshot",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/snapshots/{{snap_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "snapshots", "{{snap_id}}"]
+            },
+            "description": "Permanently deletes a snapshot from the server and underlying provider."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Restore Snapshot",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/snapshots/{{snap_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "snapshots", "{{snap_id}}"]
+            },
+            "description": "Restores (rolls back) a server to the state captured in the specified snapshot. The server must not be terminated."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/metrics?period=lastday&source=db",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "metrics"],
+              "query": [
+                { "key": "period", "value": "lastday" },
+                { "key": "source", "value": "db" },
+                { "key": "limit", "value": "100", "disabled": true }
+              ]
+            },
+            "description": "Returns server metrics (CPU, RAM, disk, network) for a given time period. Source can be 'db' (stored metrics), 'agent' (agent-reported), or 'provider' (native monitoring). Valid periods: lastday, lastweek, lastmonth, lastyear."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/events?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "events"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "start_date", "value": "", "disabled": true },
+                { "key": "end_date", "value": "", "disabled": true },
+                { "key": "action", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Returns the server's audit log / event history from the provider. Supports filtering by date range and action type."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Console",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/console",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "console"]
+            },
+            "description": "Returns a time-limited VNC/SSH console access URL for the server. The URL type depends on the provider. Not available for terminated servers."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Get Firewall",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/firewall",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "firewall"]
+            },
+            "description": "Returns the current firewall configuration for the server. If no firewall is configured, returns an empty ruleset with status 'disabled'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update Firewall",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\",\n  \"rules\": [\n    {\n      \"direction\": \"inbound\",\n      \"protocol\": \"tcp\",\n      \"port\": \"22\",\n      \"source_ip\": \"0.0.0.0/0\",\n      \"action\": \"allow\",\n      \"description\": \"SSH access\"\n    },\n    {\n      \"direction\": \"inbound\",\n      \"protocol\": \"tcp\",\n      \"port\": \"80\",\n      \"source_ip\": \"0.0.0.0/0\",\n      \"action\": \"allow\",\n      \"description\": \"HTTP\"\n    },\n    {\n      \"direction\": \"inbound\",\n      \"protocol\": \"tcp\",\n      \"port\": \"443\",\n      \"source_ip\": \"0.0.0.0/0\",\n      \"action\": \"allow\",\n      \"description\": \"HTTPS\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/servers/{{server_id}}/firewall",
+              "host": ["{{base_url}}"],
+              "path": ["servers", "{{server_id}}", "firewall"]
+            },
+            "description": "Replaces the entire firewall configuration for the server. Accepts an array of rules (max 100) and an optional status ('active' or 'disabled')."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "List Zones",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/zones",
+              "host": ["{{base_url}}"],
+              "path": ["zones"],
+              "query": [
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "filter[continent]", "value": "", "disabled": true },
+                { "key": "filter[country]", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Lists available hosting zones (data center locations). Supports filtering by continent, country, and search. Root users see provider details; tenant users see only enabled zones."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  var body = pm.response.json();",
+                  "  if (body.data && Array.isArray(body.data) && body.data.length > 0) {",
+                  "    pm.collectionVariables.set('zone_id', body.data[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Zone Images",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/zones/{{zone_id}}/images",
+              "host": ["{{base_url}}"],
+              "path": ["zones", "{{zone_id}}", "images"],
+              "query": [
+                { "key": "filter[family]", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Lists available OS images for a specific zone. Images are filtered by the zone's provider and tenant-level access controls. Supports filtering by family (ubuntu, debian, etc.) and search."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "description": "Track asynchronous operations like server provisioning and termination.",
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["tasks"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "filter[status]", "value": "running", "disabled": true },
+                { "key": "filter[type]", "value": "server.create", "disabled": true }
+              ]
+            },
+            "description": "Lists async tasks for the current tenant. Filter by status (pending, running, completed, failed, cancelled) or type (server.create, server.terminate, etc.)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  var body = pm.response.json();",
+                  "  if (body.data && Array.isArray(body.data) && body.data.length > 0) {",
+                  "    pm.collectionVariables.set('task_id', body.data[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Get Task",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}"]
+            },
+            "description": "Returns the current status and result of a specific async task. Poll this endpoint to track provisioning progress."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Cancel Task",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tasks", "{{task_id}}"]
+            },
+            "description": "Cancels a pending or running task. Tasks that are already completed or failed cannot be cancelled."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "description": "Product catalog: list, detail, options, addons, pricing, and categories. Most endpoints are public (no auth required).",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-tenant-id", "value": "{{tenant_id}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "filter[type]", "value": "vps", "disabled": true },
+                { "key": "filter[status]", "value": "active", "disabled": true },
+                { "key": "filter[category]", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Lists active products for a tenant's storefront. Public endpoint — no auth required, but x-tenant-id header or filter[tenant_id] is mandatory. Supports search and filtering by type, status, and category."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  var body = pm.response.json();",
+                  "  if (body.data && Array.isArray(body.data) && body.data.length > 0) {",
+                  "    pm.collectionVariables.set('product_id', body.data[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Product (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"VPS Pro 4\",\n  \"slug\": \"vps-pro-4\",\n  \"description\": \"High-performance VPS with 4 vCPU cores, 8GB RAM, and 200GB NVMe SSD.\",\n  \"short_description\": \"4 vCPU, 8GB RAM, 200GB NVMe\",\n  \"type\": \"vps\",\n  \"category\": \"VPS Hosting\",\n  \"status\": \"active\",\n  \"pricing\": {\n    \"monthly\": 19.99,\n    \"quarterly\": 54.99,\n    \"annual\": 199.99,\n    \"setup_fee\": 0,\n    \"currency\": \"USD\"\n  },\n  \"specs\": {\n    \"cpu\": 4,\n    \"ram_gb\": 8,\n    \"disk_gb\": 200,\n    \"disk_type\": \"NVMe SSD\",\n    \"bandwidth\": \"32TB\"\n  },\n  \"is_featured\": true,\n  \"badge\": \"Popular\",\n  \"features\": [\"DDoS Protection\", \"Full Root Access\", \"99.9% Uptime SLA\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": ["{{base_url}}"],
+              "path": ["products"]
+            },
+            "description": "Creates a new product in the catalog. Admin-only endpoint requiring products.create permission. Supports configurable options and addons."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201 Created', function() {",
+                  "  pm.expect(pm.response.code).to.equal(201);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  var body = pm.response.json();",
+                  "  if (body.data && body.data.id) {",
+                  "    pm.collectionVariables.set('product_id', body.data.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Get Product",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}"]
+            },
+            "description": "Returns detailed product information including pricing, specs, features, and HATEOAS links to options, addons, and pricing endpoints. Public endpoint."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update Product (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pricing\": {\n    \"monthly\": 17.99,\n    \"annual\": 179.99\n  },\n  \"is_featured\": true,\n  \"badge\": \"Best Value\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}"]
+            },
+            "description": "Updates product fields. Admin-only endpoint requiring products.update permission. Only provided fields are updated; omitted fields are left unchanged."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Delete Product (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}"]
+            },
+            "description": "Deletes a product from the catalog. Admin-only endpoint requiring products.delete permission."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('request_id');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product Options",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/options",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", "options"]
+            },
+            "description": "Lists configurable options (e.g., OS, control panel, extra storage) for a product. Each option has choices with optional price adjustments. Public endpoint."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product Addons",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/addons",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", "addons"]
+            },
+            "description": "Lists available addons (e.g., backups, monitoring, extra IPs) for a product. Each addon has its own billing cycle and price. Public endpoint."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product Pricing",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-tenant-id", "value": "{{tenant_id}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/products/{{product_id}}/pricing",
+              "host": ["{{base_url}}"],
+              "path": ["products", "{{product_id}}", "pricing"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}", "disabled": true }
+              ]
+            },
+            "description": "Returns product pricing with tenant-specific markup applied. Shows both base pricing and retail pricing. Pass tenant_id query param or x-tenant-id header. Public endpoint."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-tenant-id", "value": "{{tenant_id}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}", "disabled": true }
+              ]
+            },
+            "description": "Lists distinct product categories with product counts. Requires tenant_id via query param or x-tenant-id header. Public endpoint."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() {",
+                  "  pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "pm.test('Response has v2 envelope', function() {",
+                  "  var body = pm.response.json();",
+                  "  pm.expect(body).to.have.property('meta');",
+                  "  pm.expect(body.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "description": "Invoices, subscriptions, orders, balance, payment methods, and promo code validation.",
+      "item": [
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invoices?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["invoices"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "filter[status]", "value": "unpaid", "disabled": true }
+              ]
+            },
+            "description": "Returns a paginated list of the authenticated user's invoices. Supports filtering by status (paid, unpaid, overdue, cancelled, refunded)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });",
+                  "if (pm.response.code === 200) { var b = pm.response.json(); if (b.data && Array.isArray(b.data) && b.data.length > 0) { pm.collectionVariables.set('invoice_id', b.data[0].id); } }"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Get Invoice",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/invoices/{{invoice_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{invoice_id}}"]
+            },
+            "description": "Returns detailed invoice information including line items and payment links."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Pay Invoice",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gateway\": \"stripe\",\n  \"payment_method_id\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/{{invoice_id}}/pay",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "{{invoice_id}}", "pay"]
+            },
+            "description": "Initiates payment for an invoice. Accepts gateway (stripe, paypal, balance, crypto) and optional payment_method_id."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/subscriptions?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "filter[status]", "value": "active", "disabled": true }
+              ]
+            },
+            "description": "Returns a paginated list of the authenticated user's subscriptions. Supports filtering by status."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 200) { var b = pm.response.json(); if (b.data && Array.isArray(b.data) && b.data.length > 0) { pm.collectionVariables.set('subscription_id', b.data[0].id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Get Subscription",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/{{subscription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "{{subscription_id}}"]
+            },
+            "description": "Returns detailed subscription information including billing cycle, next due date, and cancellation info."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Cancel / Reactivate Subscription",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"cancel\",\n  \"reason\": \"Switching to a different plan\",\n  \"cancel_at_period_end\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions/{{subscription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "{{subscription_id}}"]
+            },
+            "description": "Cancel or reactivate a subscription. Action must be 'cancel' or 'reactivate'. Cancelled subscriptions can be reactivated; terminated ones cannot."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Get Balance",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/balance",
+              "host": ["{{base_url}}"],
+              "path": ["balance"]
+            },
+            "description": "Returns the authenticated user's prepaid account balance and currency."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Top Up Balance",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 50.00,\n  \"gateway\": \"stripe\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/balance",
+              "host": ["{{base_url}}"],
+              "path": ["balance"]
+            },
+            "description": "Initiates a balance top-up via the specified payment gateway (stripe, paypal, crypto_coingate). Amount must be positive and max 10000."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Balance Transactions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/balance/transactions?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["balance", "transactions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" }
+              ]
+            },
+            "description": "Returns a paginated history of balance transactions (credits, debits, top-ups, refunds)."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Payment Methods",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/payment-methods",
+              "host": ["{{base_url}}"],
+              "path": ["payment-methods"]
+            },
+            "description": "Returns all active payment methods for the authenticated user, ordered with default method first."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Add Payment Method",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gateway\": \"stripe\",\n  \"gateway_token\": \"pm_1234567890abcdef\",\n  \"set_default\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment-methods",
+              "host": ["{{base_url}}"],
+              "path": ["payment-methods"]
+            },
+            "description": "Adds a new payment method using a gateway token (e.g., Stripe pm_xxx). Requires gateway SDK integration."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Delete Payment Method",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/payment-methods?id=<payment_method_id>",
+              "host": ["{{base_url}}"],
+              "path": ["payment-methods"],
+              "query": [
+                { "key": "id", "value": "<payment_method_id>" }
+              ]
+            },
+            "description": "Soft-deletes a payment method by marking it inactive. Pass the payment method ID as a query parameter."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/orders?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["orders"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "filter[status]", "value": "pending", "disabled": true }
+              ]
+            },
+            "description": "Returns a paginated list of the authenticated user's orders with line items."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 200) { var b = pm.response.json(); if (b.data && Array.isArray(b.data) && b.data.length > 0) { pm.collectionVariables.set('order_id', b.data[0].id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Place Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"product_id\": \"{{product_id}}\",\n      \"quantity\": 1,\n      \"billing_cycle\": \"monthly\"\n    }\n  ],\n  \"promo_code\": \"\",\n  \"notes\": \"First VPS order\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            },
+            "description": "Places a new order with one or more line items. Each item requires a product_id, quantity, and billing_cycle. Optional promo_code for discounts."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 201 Created', function() { pm.expect(pm.response.code).to.equal(201); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 201) { var b = pm.response.json(); if (b.data && b.data.id) { pm.collectionVariables.set('order_id', b.data.id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Get Order",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "{{order_id}}"]
+            },
+            "description": "Returns detailed order information including line items, pricing breakdown, and HATEOAS links."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Validate Promo Code",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/promo/validate?code=WELCOME20",
+              "host": ["{{base_url}}"],
+              "path": ["promo", "validate"],
+              "query": [
+                { "key": "code", "value": "WELCOME20" }
+              ]
+            },
+            "description": "Validates a promotional code and returns its discount type, value, scope, expiry, and applicability. Always returns 200 with a 'valid' boolean."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Support",
+      "description": "Ticket management, replies, CSAT feedback, departments, and knowledge base.",
+      "item": [
+        {
+          "name": "List Tickets",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/tickets?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["tickets"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "filter[status]", "value": "open", "disabled": true }
+              ]
+            },
+            "description": "Returns a paginated list of the authenticated user's support tickets with replies."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 200) { var b = pm.response.json(); if (b.data && Array.isArray(b.data) && b.data.length > 0) { pm.collectionVariables.set('ticket_id', b.data[0].id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Create Ticket",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Unable to SSH into my server\",\n  \"department\": \"Technical Support\",\n  \"priority\": \"HIGH\",\n  \"message\": \"I am unable to SSH into my server at 192.168.1.1. Connection times out after 30 seconds. I have verified my SSH key is correct.\",\n  \"category\": \"connectivity\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tickets",
+              "host": ["{{base_url}}"],
+              "path": ["tickets"]
+            },
+            "description": "Creates a new support ticket. Priority options: LOW, MEDIUM, HIGH, URGENT."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 201 Created', function() { pm.expect(pm.response.code).to.equal(201); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 201) { var b = pm.response.json(); if (b.data && b.data.id) { pm.collectionVariables.set('ticket_id', b.data.id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Get Ticket",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/tickets/{{ticket_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tickets", "{{ticket_id}}"]
+            },
+            "description": "Returns detailed ticket information including all replies, status, priority, and HATEOAS links."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Close Ticket",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CLOSED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tickets/{{ticket_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["tickets", "{{ticket_id}}"]
+            },
+            "description": "Closes a ticket. Clients can only set status to CLOSED."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Reply to Ticket",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Thank you for looking into this. I also noticed the firewall rules might be blocking port 22. Could you check that as well?\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tickets/{{ticket_id}}/replies",
+              "host": ["{{base_url}}"],
+              "path": ["tickets", "{{ticket_id}}", "replies"]
+            },
+            "description": "Adds a customer reply to a ticket. Message must be 1-10000 characters."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 201 Created', function() { pm.expect(pm.response.code).to.equal(201); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Submit Feedback",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Excellent and fast support! Issue was resolved within 10 minutes.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tickets/{{ticket_id}}/feedback",
+              "host": ["{{base_url}}"],
+              "path": ["tickets", "{{ticket_id}}", "feedback"]
+            },
+            "description": "Submits a CSAT feedback rating (1-5) and optional comment for a resolved ticket. Can only be submitted once per ticket."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 201 Created', function() { pm.expect(pm.response.code).to.equal(201); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Departments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/tickets/departments",
+              "host": ["{{base_url}}"],
+              "path": ["tickets", "departments"]
+            },
+            "description": "Lists active support departments. Use the department name when creating a ticket."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "KB — List Articles",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/kb/articles?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["kb", "articles"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "filter[category]", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Lists published knowledge base articles. Supports full-text search and category filtering. Returns popular articles by default. Public endpoint."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "KB — Get Article",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/kb/articles/getting-started-with-vps",
+              "host": ["{{base_url}}"],
+              "path": ["kb", "articles", "getting-started-with-vps"]
+            },
+            "description": "Returns a single published KB article by slug, including the full Markdown content. Public endpoint."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Account",
+      "description": "User profile, password, API keys, sessions, 2FA, notifications, and activity log.",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/me", "host": ["{{base_url}}"], "path": ["me"] },
+            "description": "Returns the authenticated user's profile including name, email, 2FA status, and HATEOAS links."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1-555-0123\",\n  \"locale\": \"en\"\n}" },
+            "url": { "raw": "{{base_url}}/me", "host": ["{{base_url}}"], "path": ["me"] },
+            "description": "Updates the authenticated user's profile fields. Only provided fields are changed."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"current_password\": \"MyOldP@ssw0rd\",\n  \"new_password\": \"MyNewSecureP@ss123\"\n}" },
+            "url": { "raw": "{{base_url}}/me/change-password", "host": ["{{base_url}}"], "path": ["me", "change-password"] },
+            "description": "Changes the authenticated user's password. Requires the current password for verification. New password must be at least 8 characters."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List API Keys",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/me/api-keys", "host": ["{{base_url}}"], "path": ["me", "api-keys"] },
+            "description": "Lists the authenticated user's API keys. Key hashes are never returned; only the prefix is shown."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 200) { var b = pm.response.json(); if (b.data && Array.isArray(b.data) && b.data.length > 0) { pm.collectionVariables.set('api_key_id', b.data[0].id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Create API Key",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"CI/CD Pipeline Key\",\n  \"scopes\": [\"servers.read\", \"servers.create\", \"servers.power\"],\n  \"allowed_ips\": [],\n  \"expires_in_days\": 90\n}" },
+            "url": { "raw": "{{base_url}}/me/api-keys", "host": ["{{base_url}}"], "path": ["me", "api-keys"] },
+            "description": "Creates a new API key. The raw key is returned ONLY in this response and cannot be retrieved again. Save it immediately."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 201 Created', function() { pm.expect(pm.response.code).to.equal(201); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 201) { var b = pm.response.json(); if (b.data && b.data.id) { pm.collectionVariables.set('api_key_id', b.data.id); } if (b.data && b.data.key) { pm.collectionVariables.set('api_key', b.data.key); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Revoke API Key",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/me/api-keys/{{api_key_id}}", "host": ["{{base_url}}"], "path": ["me", "api-keys", "{{api_key_id}}"] },
+            "description": "Revokes (soft-deletes) an API key by ID. The key will no longer authenticate requests."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Sessions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/me/sessions", "host": ["{{base_url}}"], "path": ["me", "sessions"] },
+            "description": "Lists the authenticated user's active sessions with IP address, user agent, and expiry time."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 200) { var b = pm.response.json(); if (b.data && Array.isArray(b.data) && b.data.length > 0) { pm.collectionVariables.set('session_id', b.data[0].id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Revoke Session",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/me/sessions/{{session_id}}", "host": ["{{base_url}}"], "path": ["me", "sessions", "{{session_id}}"] },
+            "description": "Revokes a specific session, logging out that device/browser."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "2FA Operations",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"action\": \"status\"\n}" },
+            "url": { "raw": "{{base_url}}/me/2fa", "host": ["{{base_url}}"], "path": ["me", "2fa"] },
+            "description": "Manage two-factor authentication. Actions: 'status' (check current state), 'enable' (turn on 2FA), 'disable' (turn off 2FA). Full TOTP enrollment should be done via the web UI."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/me/notifications?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["me", "notifications"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }] },
+            "description": "Lists user-facing notifications (ticket replies, invoice events, service events, login alerts). Paginated."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Mark Notifications Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"notification_ids\": [\"notif-id-1\", \"notif-id-2\"]\n}" },
+            "url": { "raw": "{{base_url}}/me/notifications", "host": ["{{base_url}}"], "path": ["me", "notifications"] },
+            "description": "Acknowledges notifications by ID. Pass an array of 1-100 notification IDs."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Activity Log",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/me/activity?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["me", "activity"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }, { "key": "filter[action]", "value": "user.login", "disabled": true }, { "key": "filter[entity]", "value": "invoice", "disabled": true }] },
+            "description": "Returns the user's audit log / activity history. Filter by action type and/or entity."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Administrative endpoints for user management, roles, tenants, invoices, servers, tickets, leads, audit log, dashboard stats, masquerade, and v1 usage tracking.",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/users?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["admin", "users"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }, { "key": "search", "value": "", "disabled": true }, { "key": "filter[status]", "value": "active", "disabled": true }] },
+            "description": "Lists users in the admin's tenant with pagination and search. Requires users.read permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 200) { var b = pm.response.json(); if (b.data && Array.isArray(b.data) && b.data.length > 0) { pm.collectionVariables.set('user_id', b.data[0].id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Smith\",\n  \"password\": \"SecureP@ss123\",\n  \"role_ids\": []\n}" },
+            "url": { "raw": "{{base_url}}/admin/users", "host": ["{{base_url}}"], "path": ["admin", "users"] },
+            "description": "Creates a new user in the admin's tenant. Requires users.create permission. Optionally assign roles at creation."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 201 Created', function() { pm.expect(pm.response.code).to.equal(201); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 201) { var b = pm.response.json(); if (b.data && b.data.id) { pm.collectionVariables.set('user_id', b.data.id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["admin", "users", "{{user_id}}"] },
+            "description": "Returns detailed user information including roles, 2FA status, and login history. Requires users.read permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Doe\",\n  \"is_active\": true,\n  \"role_ids\": [\"{{role_id}}\"]\n}" },
+            "url": { "raw": "{{base_url}}/admin/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["admin", "users", "{{user_id}}"] },
+            "description": "Updates user fields and/or role assignments. Requires users.update permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["admin", "users", "{{user_id}}"] },
+            "description": "Soft-deletes a user (deactivates and marks as deleted). Cannot delete your own account. Requires users.delete permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/roles", "host": ["{{base_url}}"], "path": ["admin", "roles"] },
+            "description": "Lists all roles in the tenant with user counts and permission details. Requires roles.read permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 200) { var b = pm.response.json(); if (b.data && Array.isArray(b.data) && b.data.length > 0) { pm.collectionVariables.set('role_id', b.data[0].id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Support Agent\",\n  \"slug\": \"support-agent\",\n  \"description\": \"Can manage support tickets and view user info\",\n  \"priority\": 50,\n  \"permission_ids\": []\n}" },
+            "url": { "raw": "{{base_url}}/admin/roles", "host": ["{{base_url}}"], "path": ["admin", "roles"] },
+            "description": "Creates a new role with optional permission assignments. Slug must be lowercase alphanumeric with hyphens. Requires roles.create permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 201 Created', function() { pm.expect(pm.response.code).to.equal(201); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 201) { var b = pm.response.json(); if (b.data && b.data.id) { pm.collectionVariables.set('role_id', b.data.id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Get Role",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/roles/{{role_id}}", "host": ["{{base_url}}"], "path": ["admin", "roles", "{{role_id}}"] },
+            "description": "Returns detailed role information including assigned permissions and user count."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Senior Support Agent\",\n  \"description\": \"Full support management access\",\n  \"priority\": 40\n}" },
+            "url": { "raw": "{{base_url}}/admin/roles/{{role_id}}", "host": ["{{base_url}}"], "path": ["admin", "roles", "{{role_id}}"] },
+            "description": "Updates role name, description, priority, and/or permissions. Requires roles.update permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/roles/{{role_id}}", "host": ["{{base_url}}"], "path": ["admin", "roles", "{{role_id}}"] },
+            "description": "Deletes a role. System roles cannot be deleted. Roles assigned to users must have assignments removed first."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Tenants",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/tenants?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["admin", "tenants"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }, { "key": "search", "value": "", "disabled": true }] },
+            "description": "Lists tenants. Root admins see all tenants; non-root admins see only their own. Requires tenants.read permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 200) { var b = pm.response.json(); if (b.data && Array.isArray(b.data) && b.data.length > 0) { pm.collectionVariables.set('tenant_id', b.data[0].id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Get Tenant",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/tenants/{{tenant_id}}", "host": ["{{base_url}}"], "path": ["admin", "tenants", "{{tenant_id}}"] },
+            "description": "Returns detailed tenant configuration including branding, locales, modules, and markup settings."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Update Tenant",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"My Hosting Brand\",\n  \"company_name\": \"My Hosting Co.\",\n  \"company_email\": \"admin@myhosting.com\",\n  \"primary_color\": \"#2563EB\",\n  \"timezone\": \"America/New_York\"\n}" },
+            "url": { "raw": "{{base_url}}/admin/tenants/{{tenant_id}}", "host": ["{{base_url}}"], "path": ["admin", "tenants", "{{tenant_id}}"] },
+            "description": "Updates tenant settings including branding, contact info, colors, and activation status. Requires tenants.update permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Admin — List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/invoices?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["admin", "invoices"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }, { "key": "search", "value": "", "disabled": true }, { "key": "filter[status]", "value": "unpaid", "disabled": true }, { "key": "filter[user_id]", "value": "", "disabled": true }] },
+            "description": "Lists all invoices across the tenant with user details. Supports search by invoice number or user email/name. Requires billing.read permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Admin — List Servers",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/servers?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["admin", "servers"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }, { "key": "search", "value": "", "disabled": true }, { "key": "filter[status]", "value": "active", "disabled": true }, { "key": "filter[provider]", "value": "", "disabled": true }, { "key": "filter[owner_id]", "value": "", "disabled": true }] },
+            "description": "Lists all servers across the tenant with owner details. Supports search and filtering by status, provider, region, and owner. Requires provisioning.read permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Admin — List Tickets",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/tickets?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["admin", "tickets"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }, { "key": "filter[status]", "value": "open", "disabled": true }, { "key": "filter[priority]", "value": "high", "disabled": true }] },
+            "description": "Lists all tickets across the tenant. Filter by status, priority, brand, channel, assigned agent, and lifecycle state. Requires support.manage permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Admin — Update Ticket",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"priority\": \"HIGH\",\n  \"assigned_tier\": 2\n}" },
+            "url": { "raw": "{{base_url}}/admin/tickets/{{ticket_id}}", "host": ["{{base_url}}"], "path": ["admin", "tickets", "{{ticket_id}}"] },
+            "description": "Updates ticket status, priority, assignment, department, or category. Admins have full status control unlike clients. Requires support.manage permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Leads",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/leads?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["admin", "leads"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }, { "key": "search", "value": "", "disabled": true }, { "key": "filter[status]", "value": "", "disabled": true }, { "key": "filter[source]", "value": "", "disabled": true }] },
+            "description": "Lists leads with search and filtering by status, source, and country. Requires leads.read permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Create Lead",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"lead@example.com\",\n  \"first_name\": \"Alex\",\n  \"last_name\": \"Johnson\",\n  \"company\": \"TechCorp Inc.\",\n  \"source\": \"WEBSITE\",\n  \"source_detail\": \"pricing page signup\",\n  \"industry\": \"Technology\",\n  \"country\": \"US\",\n  \"tags\": [\"enterprise\", \"vps\"]\n}" },
+            "url": { "raw": "{{base_url}}/admin/leads", "host": ["{{base_url}}"], "path": ["admin", "leads"] },
+            "description": "Creates a new lead. Requires leads.create permission. Duplicate email within the same tenant is rejected."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 201 Created', function() { pm.expect(pm.response.code).to.equal(201); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Audit Log",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/audit-log?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["admin", "audit-log"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }, { "key": "search", "value": "", "disabled": true }, { "key": "filter[action]", "value": "", "disabled": true }, { "key": "filter[user_id]", "value": "", "disabled": true }, { "key": "filter[entity]", "value": "", "disabled": true }] },
+            "description": "Lists tenant-wide audit log entries. Filter by action, user, entity, and status. Requires audit.read permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/dashboard/stats", "host": ["{{base_url}}"], "path": ["admin", "dashboard", "stats"] },
+            "description": "Returns aggregate KPI stats for the admin dashboard: users, servers, revenue this month, open tickets, and invoices. Requires dashboard.read permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Start Masquerade",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/masquerade/{{user_id}}", "host": ["{{base_url}}"], "path": ["admin", "masquerade", "{{user_id}}"] },
+            "description": "Starts a masquerade session, viewing the platform as the target user. Cannot masquerade as yourself or as users with admin privileges. Requires masquerade.use permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Stop Masquerade",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/masquerade/{{user_id}}", "host": ["{{base_url}}"], "path": ["admin", "masquerade", "{{user_id}}"] },
+            "description": "Stops the active masquerade session and returns to the admin's own context."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "V1 Usage Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/admin/v1-usage", "host": ["{{base_url}}"], "path": ["admin", "v1-usage"] },
+            "description": "Returns usage statistics for v1 API endpoints that have v2 equivalents. Helps track migration progress. Requires audit.read permission."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Affiliate",
+      "description": "Affiliate program: dashboard, commissions, referrals, payout requests, marketing materials, and reseller overview.",
+      "item": [
+        {
+          "name": "Affiliate Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/affiliate/me", "host": ["{{base_url}}"], "path": ["affiliate", "me"] },
+            "description": "Returns the authenticated user's affiliate dashboard: referral code, earnings, balance, conversion stats, and HATEOAS links."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Commissions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/affiliate/commissions?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["affiliate", "commissions"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }, { "key": "filter[status]", "value": "approved", "disabled": true }] },
+            "description": "Lists the affiliate's commissions with status, amount, and recurring info. Filter by status (pending, approved, paid, rejected)."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Referrals",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/affiliate/referrals?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["affiliate", "referrals"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }, { "key": "filter[converted]", "value": "true", "disabled": true }] },
+            "description": "Lists the affiliate's referral clicks and conversions. Filter by converted status."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Request Payout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/affiliate/payout-request", "host": ["{{base_url}}"], "path": ["affiliate", "payout-request"] },
+            "description": "Requests a payout of the affiliate's available balance. The affiliate account must be active with sufficient balance."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 201 Created', function() { pm.expect(pm.response.code).to.equal(201); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Marketing Materials",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/affiliate/materials", "host": ["{{base_url}}"], "path": ["affiliate", "materials"] },
+            "description": "Lists available marketing materials (banners, links, creatives) for the affiliate program."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Reseller Overview",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/reseller", "host": ["{{base_url}}"], "path": ["reseller"] },
+            "description": "Returns the reseller overview including tenant info, earnings summary, client counts, and pricing markup configuration."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "description": "Webhook subscription management: create, update, delete, test, view deliveries, and list available event types.",
+      "item": [
+        {
+          "name": "List Webhooks",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/webhooks", "host": ["{{base_url}}"], "path": ["webhooks"] },
+            "description": "Lists all webhook subscriptions for the current tenant. Secrets are masked (only last 6 chars shown)."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 200) { var b = pm.response.json(); if (b.data && Array.isArray(b.data) && b.data.length > 0) { pm.collectionVariables.set('webhook_id', b.data[0].id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Create Webhook",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://example.com/webhooks/datamammoth\",\n  \"events\": [\"server.created\", \"server.terminated\", \"invoice.paid\"],\n  \"description\": \"Production webhook for server and billing events\"\n}" },
+            "url": { "raw": "{{base_url}}/webhooks", "host": ["{{base_url}}"], "path": ["webhooks"] },
+            "description": "Creates a new webhook subscription. A signing secret is auto-generated and returned in the response. Store the secret securely for signature verification."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 201 Created', function() { pm.expect(pm.response.code).to.equal(201); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });", "if (pm.response.code === 201) { var b = pm.response.json(); if (b.data && b.data.id) { pm.collectionVariables.set('webhook_id', b.data.id); } }"] } }],
+          "response": []
+        },
+        {
+          "name": "Get Webhook",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/webhooks/{{webhook_id}}", "host": ["{{base_url}}"], "path": ["webhooks", "{{webhook_id}}"] },
+            "description": "Returns webhook subscription details including events, URL, status, and delivery/test links."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Update Webhook",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://example.com/webhooks/datamammoth-v2\",\n  \"events\": [\"server.created\", \"server.terminated\", \"invoice.paid\", \"ticket.created\"],\n  \"is_active\": true\n}" },
+            "url": { "raw": "{{base_url}}/webhooks/{{webhook_id}}", "host": ["{{base_url}}"], "path": ["webhooks", "{{webhook_id}}"] },
+            "description": "Updates a webhook subscription's URL, events, description, or active status."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Delete Webhook",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/webhooks/{{webhook_id}}", "host": ["{{base_url}}"], "path": ["webhooks", "{{webhook_id}}"] },
+            "description": "Permanently deletes a webhook subscription and all its delivery history."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Webhook Deliveries",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/webhooks/{{webhook_id}}/deliveries?page=1&per_page=20", "host": ["{{base_url}}"], "path": ["webhooks", "{{webhook_id}}", "deliveries"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "20" }] },
+            "description": "Returns the paginated delivery log for a webhook subscription, showing each attempt's status code, response, and timing."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "Test Webhook",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/webhooks/{{webhook_id}}/test", "host": ["{{base_url}}"], "path": ["webhooks", "{{webhook_id}}", "test"] },
+            "description": "Sends a test delivery to the webhook URL with sample event data. The webhook must be active."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        },
+        {
+          "name": "List Event Types",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/webhooks/events", "host": ["{{base_url}}"], "path": ["webhooks", "events"] },
+            "description": "Returns the catalog of all available webhook event types that can be subscribed to."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status code is 2xx', function() { pm.expect(pm.response.code).to.be.within(200, 299); });", "pm.test('Response has v2 envelope', function() { var b = pm.response.json(); pm.expect(b).to.have.property('meta'); pm.expect(b.meta).to.have.property('request_id'); pm.expect(b.meta).to.have.property('version', '2.0'); });"] } }],
+          "response": []
+        }
+      ]
+    }
+  ]
+}
